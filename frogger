@@ -1,0 +1,146 @@
+import pygame
+import random
+
+pygame.init()
+
+background = pygame.image.load('background.png')
+font = pygame.font.Font('atari_full.ttf', 32)
+font2 = pygame.font.Font('atari_full.ttf', 18)
+width = 600
+height = 800
+screen = pygame.display.set_mode((width, height))
+
+clock = pygame.time.Clock()
+frogs = []
+fps = 60
+score = 0
+
+
+class Object:
+    def __init__(self):
+        self.speed = 5
+
+    def show(self):
+        screen.blit(self.image, (self.x, self.y))
+
+    def move(self):
+        self.x += self.speed
+
+
+class Car(Object):
+    cars_pics = ['car_orange.png',
+                 'car_green.png',
+                 'car_red.png',
+                 'car_taxi.png']
+
+    def __init__(self):
+        super().__init__()
+        self.x = - 50
+        self.y = random.choice([500, 450, 400, 350, 300, 250, 200, 150])
+        self.selected_car = random.choice(Car.cars_pics)
+        self.image = pygame.image.load(self.selected_car)
+
+
+class Frog:
+    def __init__(self):
+        self.image = pygame.image.load("frog.png")
+        self.speed = 50
+        self.x = width / 2 - 50
+        self.y = height - 60
+        self.area = screen.blit(self.image, (self.x, self.y))
+
+    def show(self):
+        self.area = screen.blit(self.image, (self.x, self.y))
+
+
+class Game:
+    @staticmethod
+    def play():
+        global frogs
+        frogs = [Frog()]
+        cars = []
+        start_time = pygame.time.get_ticks()
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        exit()
+                    if event.key == pygame.K_LEFT:
+                        frogs[-1].x -= 50
+                        if frogs[-1].x <= 0:
+                            frogs[-1].x = 580
+                    elif event.key == pygame.K_RIGHT:
+                        frogs[-1].x += 50
+                        if frogs[-1].x >= 600:
+                            frogs[-1].x = 20
+                    elif event.key == pygame.K_UP:
+                        frogs[-1].y -= 50
+                        if frogs[-1].y == 400:
+                            frogs[-1].y -= 20
+                    elif event.key == pygame.K_DOWN:
+                        frogs[-1].y += 50
+                        if frogs[-1].y == 400:
+                            frogs[-1].y += 20
+
+            if random.random() < 0.05:
+                cars.append(Car())
+
+            for car in cars:
+                car.move()
+
+            screen.blit(background, (0, 0))
+
+            for car in cars:
+                car.show()
+
+            for frog in frogs:
+                frog.show()
+
+            if frogs[-1].y < 80:
+                GameOver("Win")
+
+            if frogs[-1].y > 100:
+                for car in cars:
+                    if frogs[-1].area.colliderect(pygame.Rect(car.x, car.y, 100, 51)):
+                        GameOver("Game Over!")
+
+            time_since_enter = pygame.time.get_ticks() - start_time
+            GameTime(str(time_since_enter / 100))
+
+            pygame.display.update()
+            clock.tick(30)
+
+def GameTime(time):
+    time = font2.render(time, True, (255, 0, 0), (0, 0, 0))
+    timeRect = time.get_rect()
+    timeRect.center = (width - 50, height - 50)
+    screen.blit(time, timeRect)
+
+def GameOver(end):
+    text1 = font.render(end, True, (255, 0, 0), (0, 0, 0))
+    text2 = font2.render('Nyomj Billentyut!', True, (255, 0, 0), (0, 0, 0))
+    if end == "Game Over!":
+        frogs[-1].image = pygame.image.load('frog_dead.png')
+
+    textRect1 = text1.get_rect()
+    textRect1.center = (width / 2, height / 2)
+    textRect2 = text2.get_rect()
+    textRect2.center = (width / 2, height / 2 + 50)
+
+    while True:
+        screen.blit(text1, textRect1)
+        screen.blit(text2, textRect2)
+        frogs[-1].show()
+        pygame.display.update()
+        clock.tick(fps)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                exit()
+            elif event.type == pygame.KEYDOWN:
+                Game.play()
+
+if __name__ == "__main__":
+    Game.play()
